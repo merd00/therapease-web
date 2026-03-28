@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
+import authService from "../../services/authService";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -20,18 +21,16 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    setError(null);
 
-    // Şimdilik sahte giriş — ileride gerçek API'ye bağlayacağız
-    setTimeout(() => {
-      if (email === "doktor@test.com" && password === "123456") {
-        login({ name: "Dr. Mert", role: "Psikolog" }, "sahte-token-123");
-        navigate("/");
-      } else {
-        setError("Email veya şifre hatalı.");
-      }
+    try {
+      const data = await authService.login(email, password);
+      login({ name: data.user.name, role: data.user.role }, data.access_token);
+      navigate("/");
+    } catch (err) {
+      setError(err.response?.data?.detail || "Giriş başarısız.");
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (

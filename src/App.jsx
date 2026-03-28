@@ -5,22 +5,19 @@ import DashboardPage from './pages/dashboard/DashboardPage'
 import PatientsPage from './pages/patients/PatientsPage'
 import AppointmentsPage from './pages/appointments/AppointmentsPage'
 import NotesPage from './pages/notes/NotesPage'
+import useAuthStore from './store/authStore'
 
-// Giriş yapılmamışsa login sayfasına yönlendir
 function ProtectedRoute({ children }) {
-  const isLoggedIn = localStorage.getItem('token')
-  return isLoggedIn ? children : <Navigate to="/login" />
+  const token = useAuthStore((state) => state.token)
+  if (!token) return <Navigate to="/login" replace />
+  return children
 }
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-
-        {/* Giriş sayfası — herkese açık */}
         <Route path="/login" element={<LoginPage />} />
-
-        {/* Korunan sayfalar — sadece giriş yapılmışsa */}
         <Route
           path="/"
           element={
@@ -34,7 +31,6 @@ function App() {
           <Route path="randevular" element={<AppointmentsPage />} />
           <Route path="notlar" element={<NotesPage />} />
         </Route>
-
       </Routes>
     </BrowserRouter>
   )
