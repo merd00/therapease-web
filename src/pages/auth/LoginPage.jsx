@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import useAuthStore from "../../store/authStore";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -7,6 +8,7 @@ export default function LoginPage() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const login = useAuthStore((state) => state.login);
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Sayfanın yenilenmesini engeller
@@ -23,7 +25,7 @@ export default function LoginPage() {
     // Şimdilik sahte giriş — ileride gerçek API'ye bağlayacağız
     setTimeout(() => {
       if (email === "doktor@test.com" && password === "123456") {
-        localStorage.setItem("token", "sahte-token-123");
+        login({ name: "Dr. Mert", role: "Psikolog" }, "sahte-token-123");
         navigate("/");
       } else {
         setError("Email veya şifre hatalı.");
