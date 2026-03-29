@@ -1,34 +1,42 @@
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { Calendar, Plus, Trash2 } from 'lucide-react'
 import appointmentService from '../../services/appointmentService'
 import patientService from '../../services/patientService'
+import { toast } from 'sonner'
 
 const filters = ['Tümü', 'Onaylı', 'Beklemede', 'İptal']
 
 const statusStyle = {
-  'Onaylı':    'bg-emerald-50 text-emerald-700',
-  'Beklemede': 'bg-amber-50 text-amber-700',
-  'İptal':     'bg-red-50 text-red-600',
+  'Onaylı':    'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400',
+  'Beklemede': 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
+  'İptal':     'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400',
 }
 
-function AppointmentCard({ appointment, onDelete, onStatusChange }) {
+function AppointmentCard({ appointment, onDelete, onStatusChange, index }) {
   return (
-    <div className="flex items-center gap-4 py-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors rounded-lg px-3">
-      <div className="w-16 text-center">
-        <p className="text-sm font-medium text-gray-900">{appointment.time}</p>
-        <p className="text-xs text-gray-400">{appointment.duration} dk</p>
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.04 }}
+      className="flex items-center gap-4 py-4 border-b border-gray-50 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded-xl px-3"
+    >
+      <div className="w-16 text-center shrink-0">
+        <p className="text-base font-bold text-gray-900 dark:text-white">{appointment.time}</p>
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-300">{appointment.duration} dk</p>
       </div>
-      <div className="w-0.5 h-10 bg-gray-100 rounded-full" />
-      <div className="flex-1">
-        <p className="text-sm font-medium text-gray-900">
-          {appointment.patient_name || 'Hasta'}
+      <div className="w-0.5 h-10 bg-gray-100 dark:bg-gray-700 rounded-full shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-base font-semibold text-gray-900 dark:text-white truncate">
+          {appointment.patient_name || 'Danışan'}
         </p>
-        <p className="text-xs text-gray-400 mt-0.5">{appointment.type}</p>
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-300 mt-0.5">{appointment.type}</p>
       </div>
-      <p className="text-xs text-gray-400">{appointment.date}</p>
+      <p className="text-sm font-semibold text-gray-500 dark:text-gray-300 shrink-0">{appointment.date}</p>
       <select
         value={appointment.status}
         onChange={(e) => onStatusChange(appointment.id, e.target.value)}
-        className={`text-xs px-3 py-1 rounded-full font-medium border-0 outline-none cursor-pointer ${statusStyle[appointment.status] || 'bg-gray-100 text-gray-500'}`}
+        className={`text-xs px-3 py-1.5 rounded-full font-bold border-0 outline-none cursor-pointer shrink-0 ${statusStyle[appointment.status] || 'bg-gray-100 text-gray-500'}`}
       >
         <option>Beklemede</option>
         <option>Onaylı</option>
@@ -36,11 +44,12 @@ function AppointmentCard({ appointment, onDelete, onStatusChange }) {
       </select>
       <button
         onClick={() => onDelete(appointment.id)}
-        className="text-xs text-red-400 hover:text-red-600 transition-colors"
+        className="flex items-center gap-1.5 text-xs font-semibold text-red-400 hover:text-white hover:bg-red-500 px-3 py-1.5 rounded-lg transition-all shrink-0"
       >
+        <Trash2 size={13} />
         Sil
       </button>
-    </div>
+    </motion.div>
   )
 }
 
@@ -49,7 +58,6 @@ export default function AppointmentsPage() {
   const [patients, setPatients]         = useState([])
   const [activeFilter, setActiveFilter] = useState('Tümü')
   const [loading, setLoading]           = useState(true)
-  const [error, setError]               = useState(null)
   const [showForm, setShowForm]         = useState(false)
   const [saving, setSaving]             = useState(false)
   const [newAppt, setNewAppt]           = useState({
@@ -61,9 +69,7 @@ export default function AppointmentsPage() {
     status: 'Beklemede',
   })
 
-  useEffect(() => {
-    fetchData()
-  }, [])
+  useEffect(() => { fetchData() }, [])
 
   const fetchData = async () => {
     try {
@@ -75,7 +81,7 @@ export default function AppointmentsPage() {
       setAppointments(appts)
       setPatients(pats)
     } catch (err) {
-      setError('Veriler yüklenemedi.')
+      toast.error('Veriler yüklenemedi')
     } finally {
       setLoading(false)
     }
@@ -83,7 +89,7 @@ export default function AppointmentsPage() {
 
   const handleCreate = async () => {
     if (!newAppt.patient_id || !newAppt.date || !newAppt.time) {
-      setError('Hasta, tarih ve saat zorunludur.')
+      toast.warning('Danışan, tarih ve saat zorunludur')
       return
     }
     try {
@@ -93,14 +99,13 @@ export default function AppointmentsPage() {
         patient_id: parseInt(newAppt.patient_id),
         duration: parseInt(newAppt.duration),
       })
-      // Hasta adını ekle
       const patient = patients.find(p => p.id === created.patient_id)
       setAppointments([...appointments, { ...created, patient_name: patient?.name }])
       setNewAppt({ patient_id: '', date: '', time: '', type: 'Bireysel terapi', duration: 50, status: 'Beklemede' })
       setShowForm(false)
-      setError(null)
+      toast.success('Randevu başarıyla eklendi')
     } catch (err) {
-      setError('Randevu eklenemedi.')
+      toast.error('Randevu eklenemedi')
     } finally {
       setSaving(false)
     }
@@ -111,8 +116,9 @@ export default function AppointmentsPage() {
     try {
       await appointmentService.delete(id)
       setAppointments(appointments.filter(a => a.id !== id))
+      toast.success('Randevu silindi')
     } catch (err) {
-      setError('Randevu silinemedi.')
+      toast.error('Randevu silinemedi')
     }
   }
 
@@ -120,8 +126,9 @@ export default function AppointmentsPage() {
     try {
       await appointmentService.update(id, { status })
       setAppointments(appointments.map(a => a.id === id ? { ...a, status } : a))
+      toast.success('Durum güncellendi')
     } catch (err) {
-      setError('Durum güncellenemedi.')
+      toast.error('Durum güncellenemedi')
     }
   }
 
@@ -129,59 +136,63 @@ export default function AppointmentsPage() {
     activeFilter === 'Tümü' ? true : a.status === activeFilter
   )
 
+  const inputClass = "w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-emerald-400 transition-colors bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600"
+
   if (loading) return (
-    <div className="p-8 text-gray-400 text-sm">Yükleniyor...</div>
+    <div className="p-8 space-y-4">
+      {Array(4).fill(0).map((_, i) => (
+        <div key={i} className="animate-pulse flex gap-4 items-center bg-white dark:bg-gray-900 rounded-2xl p-5">
+          <div className="w-16 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg" />
+          <div className="flex-1 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg" />
+          <div className="w-24 h-8 bg-gray-100 dark:bg-gray-800 rounded-full" />
+        </div>
+      ))}
+    </div>
   )
 
   return (
     <div className="p-8 space-y-6">
 
       {/* Başlık */}
-      <div className="flex items-center justify-between">
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between"
+      >
         <div>
-          <h1 className="text-2xl font-medium text-gray-900">Randevular</h1>
-          <p className="text-gray-500 text-sm mt-1">{appointments.length} randevu</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Randevular</h1>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-300 mt-1">
+            {appointments.length} randevu
+          </p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
+          className="flex items-center gap-2 bg-emerald-600 text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-emerald-700 transition-colors shadow-sm"
         >
-          {showForm ? 'İptal' : '+ Yeni randevu'}
+          <Plus size={16} />
+          {showForm ? 'İptal' : 'Yeni randevu'}
         </button>
-      </div>
-
-      {/* Hata */}
-      {error && (
-        <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      )}
+      </motion.div>
 
       {/* Yeni randevu formu */}
       {showForm && (
-        <div className="bg-white border border-gray-100 rounded-2xl p-6 space-y-4">
-          <h2 className="text-base font-medium text-gray-900">Yeni randevu ekle</h2>
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 space-y-4"
+        >
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Yeni randevu ekle</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Hasta *</label>
-              <select
-                value={newAppt.patient_id}
-                onChange={(e) => setNewAppt({ ...newAppt, patient_id: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white"
-              >
-                <option value="">Hasta seçin...</option>
-                {patients.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
+              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Danışan *</label>
+              <select value={newAppt.patient_id} onChange={(e) => setNewAppt({ ...newAppt, patient_id: e.target.value })} className={inputClass}>
+                <option value="">Danışan seçin...</option>
+                {patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Tür *</label>
-              <select
-                value={newAppt.type}
-                onChange={(e) => setNewAppt({ ...newAppt, type: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white"
-              >
+              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Tür *</label>
+              <select value={newAppt.type} onChange={(e) => setNewAppt({ ...newAppt, type: e.target.value })} className={inputClass}>
                 <option>Bireysel terapi</option>
                 <option>Çift terapisi</option>
                 <option>İlk görüşme</option>
@@ -189,39 +200,20 @@ export default function AppointmentsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Tarih *</label>
-              <input
-                type="date"
-                value={newAppt.date}
-                onChange={(e) => setNewAppt({ ...newAppt, date: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
-              />
+              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Tarih *</label>
+              <input type="date" value={newAppt.date} onChange={(e) => setNewAppt({ ...newAppt, date: e.target.value })} className={inputClass} />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Saat *</label>
-              <input
-                type="time"
-                value={newAppt.time}
-                onChange={(e) => setNewAppt({ ...newAppt, time: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
-              />
+              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Saat *</label>
+              <input type="time" value={newAppt.time} onChange={(e) => setNewAppt({ ...newAppt, time: e.target.value })} className={inputClass} />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Süre (dk)</label>
-              <input
-                type="number"
-                value={newAppt.duration}
-                onChange={(e) => setNewAppt({ ...newAppt, duration: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
-              />
+              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Süre (dk)</label>
+              <input type="number" value={newAppt.duration} onChange={(e) => setNewAppt({ ...newAppt, duration: e.target.value })} className={inputClass} />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Durum</label>
-              <select
-                value={newAppt.status}
-                onChange={(e) => setNewAppt({ ...newAppt, status: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white"
-              >
+              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Durum</label>
+              <select value={newAppt.status} onChange={(e) => setNewAppt({ ...newAppt, status: e.target.value })} className={inputClass}>
                 <option>Beklemede</option>
                 <option>Onaylı</option>
                 <option>İptal</option>
@@ -231,11 +223,12 @@ export default function AppointmentsPage() {
           <button
             onClick={handleCreate}
             disabled={saving}
-            className="bg-emerald-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50"
           >
+            <Plus size={15} />
             {saving ? 'Kaydediliyor...' : 'Kaydet'}
           </button>
-        </div>
+        </motion.div>
       )}
 
       {/* Filtreler */}
@@ -244,10 +237,10 @@ export default function AppointmentsPage() {
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
-            className={`px-4 py-1.5 rounded-full text-sm transition-colors ${
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
               activeFilter === filter
-                ? 'bg-gray-900 text-white'
-                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-sm'
+                : 'bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
             }`}
           >
             {filter}
@@ -256,22 +249,36 @@ export default function AppointmentsPage() {
       </div>
 
       {/* Liste */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl p-4"
+      >
         {filtered.length === 0 ? (
-          <p className="text-center py-8 text-gray-400 text-sm">
-            {appointments.length === 0 ? 'Henüz randevu eklenmemiş.' : 'Bu filtrede randevu yok.'}
-          </p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-14 h-14 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-3">
+              <Calendar size={24} className="text-gray-300 dark:text-gray-600" />
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 font-semibold">
+              {appointments.length === 0 ? 'Henüz randevu eklenmemiş' : 'Bu filtrede randevu yok'}
+            </p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
+              {appointments.length === 0 ? 'Yeni randevu ekle butonuna tıklayın' : 'Farklı bir filtre deneyin'}
+            </p>
+          </div>
         ) : (
-          filtered.map(appointment => (
+          filtered.map((appointment, index) => (
             <AppointmentCard
               key={appointment.id}
               appointment={appointment}
               onDelete={handleDelete}
               onStatusChange={handleStatusChange}
+              index={index}
             />
           ))
         )}
-      </div>
+      </motion.div>
 
     </div>
   )

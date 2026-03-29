@@ -1,8 +1,8 @@
 import api from './api'
 
 const statsService = {
-  getStats: async () => {
-    const response = await api.get('/stats/')
+  getStats: async (weekOffset = 0) => {
+    const response = await api.get(`/stats/?week_offset=${weekOffset}`)
     return response.data
   },
 }

@@ -5,6 +5,7 @@ import DashboardPage from './pages/dashboard/DashboardPage'
 import PatientsPage from './pages/patients/PatientsPage'
 import AppointmentsPage from './pages/appointments/AppointmentsPage'
 import NotesPage from './pages/notes/NotesPage'
+import ProfilePage from './pages/profile/ProfilePage'
 import useAuthStore from './store/authStore'
 
 function ProtectedRoute({ children }) {
@@ -30,6 +31,7 @@ function App() {
           <Route path="hastalar" element={<PatientsPage />} />
           <Route path="randevular" element={<AppointmentsPage />} />
           <Route path="notlar" element={<NotesPage />} />
+          <Route path="profil" element={<ProfilePage />} /> 
         </Route>
       </Routes>
     </BrowserRouter>
