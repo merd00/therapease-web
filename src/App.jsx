@@ -3,6 +3,7 @@ import LoginPage from './pages/auth/LoginPage'
 import Layout from './components/layout/Layout'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import PatientsPage from './pages/patients/PatientsPage'
+import PatientDetailPage from './pages/patients/PatientDetailPage'
 import AppointmentsPage from './pages/appointments/AppointmentsPage'
 import NotesPage from './pages/notes/NotesPage'
 import ProfilePage from './pages/profile/ProfilePage'
@@ -29,9 +30,11 @@ function App() {
         >
           <Route index element={<DashboardPage />} />
           <Route path="hastalar" element={<PatientsPage />} />
+          <Route path="danisanlar" element={<PatientsPage />} />
+          <Route path="danisanlar/:id" element={<PatientDetailPage />} />
           <Route path="randevular" element={<AppointmentsPage />} />
           <Route path="notlar" element={<NotesPage />} />
-          <Route path="profil" element={<ProfilePage />} /> 
+          <Route path="profil" element={<ProfilePage />} />
         </Route>
       </Routes>
     </BrowserRouter>
